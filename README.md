@@ -55,3 +55,110 @@ Here is a pre-start checklist:
 ## Module 1
 
 - Done
+
+## Module 2 — DevOps Core
+
+This phase introduces a Python application and a Docker image. The application
+prints its configured version once and exits. It does not start an HTTP server,
+so no port mapping is required.
+
+### Prerequisites
+
+- Python 3.12 and `venv` for local execution.
+- Docker with a running engine for container execution.
+- Access to the Python package index to install dependencies and to Docker Hub
+  to pull the base image, unless they are already available locally.
+
+Run the following commands from the repository root. Examples use a POSIX shell
+such as Bash or Zsh.
+
+### Run locally
+
+Create and activate a virtual environment, then install the declared dependencies:
+
+```sh
+python3 -m venv venv
+source venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+Run the application with the Phase 2 version:
+
+```sh
+APP_VERSION=0.0.1 python src/main.py
+```
+
+Expected output:
+
+```text
+App Version: 0.0.1
+```
+
+The process should exit with status `0`. Run `echo $?` immediately afterward to
+inspect its exit status. When finished, leave the virtual environment:
+
+```sh
+deactivate
+```
+
+### Configuration
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `APP_VERSION` | Version displayed by the application | `0.0.0` |
+
+The current implementation loads `.env` values using `python-dotenv`; an existing
+process environment variable takes precedence. `.env.example` documents the
+example version setting. These instructions pass the value through the process
+environment explicitly.
+
+The configured Phase 2 output is `App Version: 0.0.1`. With neither an environment
+variable nor a `.env` setting, the current application prints `App Version: 0.0.0`.
+The image tag and `APP_VERSION` are independent: tagging an image does not set the
+application's displayed version.
+
+### Build the Docker image
+
+```sh
+docker build -t hivebox:0.0.1 .
+```
+
+The Dockerfile uses `python:3.12-alpine`, installs dependencies from
+`requirements.txt`, copies the application, and runs it as `pythonuser`.
+
+The build context is the repository root. Check `.dockerignore` before building:
+the current exclusions omit the Git directory, the local `venv`, and
+`.env.example`, but do not exclude `.env`. If a local `.env` exists, the current
+`COPY . .` instruction includes it in the image. Add an exclusion before using
+local configuration files that must remain outside the image.
+
+### Run the container
+
+```sh
+docker run --rm -e APP_VERSION=0.0.1 hivebox:0.0.1
+```
+
+Expected output:
+
+```text
+App Version: 0.0.1
+```
+
+The container should exit with status `0`; check with `echo $?` immediately after
+the command. `--rm` removes the stopped container while keeping the image for
+subsequent runs. Immediate termination is expected for this application.
+
+### Manual verification
+
+Before opening the Phase 2 pull request:
+
+1. Install dependencies in a fresh virtual environment.
+2. Run the local application with `APP_VERSION=0.0.1` and confirm the expected
+   output and exit status `0`.
+3. Build the image using the command above.
+4. Run the container with the same configuration and confirm matching output
+   and exit status `0`.
+5. Include the commands and observed results in the pull request description.
+
+These are verification instructions, not a record of completed checks. No
+application test suite or CI workflow is included in this phase.
